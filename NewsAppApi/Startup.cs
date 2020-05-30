@@ -12,6 +12,7 @@ namespace NewsAppApi
 {
     public class Startup
     {
+        readonly string MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
         public Startup(IConfiguration configuration)
         {
             Configuration = configuration;
@@ -22,8 +23,20 @@ namespace NewsAppApi
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddCors(options =>
+            {
+                options.AddPolicy(name: MyAllowSpecificOrigins,
+                                  builder =>
+                                  {
+                                      builder.WithOrigins("*")
+                                      .AllowAnyHeader()
+                                                  .AllowAnyMethod(); ;
+                                  });
+            });
+
+            services.Configure<Helpers.AppSettings>(Configuration.GetSection("AppSettings"));
             services.AddDbContext<ApiContext>(opcions => opcions.UseSqlServer(Configuration.GetConnectionString("defaultConnection")));
-            var key = Encoding.ASCII.GetBytes("8p5I70DF84784fg_CentralBaseApp868AEas08125");
+            var key = Encoding.ASCII.GetBytes(Constantes.JWTSecret);
             services.AddAuthentication().AddJwtBearer(x =>
             {
                 x.RequireHttpsMetadata = false;
@@ -57,7 +70,8 @@ namespace NewsAppApi
                 // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
                 app.UseHsts();
             }
-
+            app.UseCors(MyAllowSpecificOrigins);
+            app.UseCors();
             app.UseHttpsRedirection();
 
             app.UseSwagger();

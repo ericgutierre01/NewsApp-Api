@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Dynamic;
+using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Text.Json;
@@ -9,6 +10,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using NewsAppApi.Entities;
 using NewsAppApi.Entities.Data;
 using NewsAppApi.ViewModel;
@@ -20,14 +23,16 @@ namespace NewsAppApi.Controllers
     public class NoticiasController : ControllerBase
     {
         private readonly ApiContext _db;
-        public NoticiasController(ApiContext context)
+        private readonly Helpers.AppSettings _appSettings;
+        public NoticiasController(IOptions<Helpers.AppSettings> appSettings, ApiContext context)
         {
+            _appSettings = appSettings.Value;
             _db = context;
         }
 
         [HttpGet("{tema}")]
         [AllowAnonymous]
-        public async Task<ActionResult> Noticias([FromRoute] string tema, string start)
+        public async Task<ActionResult> Get([FromRoute] string tema, string start)
         {
             try
             {
@@ -82,8 +87,12 @@ namespace NewsAppApi.Controllers
         {
             try
             {
-                var imagenes = _db.Imagenes.Where(x => x.ImaTitulo == tema);
+                var imagenes = _db.Imagenes.Where(x => x.ImaTitulo == tema);//.Select(x => Path.Combine(_appSettings.DomainImg, "hots", x.ImaPath));
 
+                await imagenes.ForEachAsync(x =>
+                {
+                    x.ImaPath = x.ImaIsLink ? x.ImaPath : Path.Combine(_appSettings.DomainImg, "hots", x.ImaPath);
+                });
                 return Ok(imagenes);
             }
             catch (Exception e)
@@ -100,6 +109,18 @@ namespace NewsAppApi.Controllers
             try
             {
                 model.ImaId = 0;
+
+                if (!model.ImaIsLink)
+                {
+                    var location = Path.Combine(_appSettings.PathImg, "hots");
+                    var image = Helpers.DataImage.TryParse(model.ImaPath);
+                    var fileName = $"{Helpers.Utils.GenerateGuid()}.{image.Extesion}";
+
+                    //Guardar Imagenes Fisicamente!.-
+                    System.IO.File.WriteAllBytes(Path.Combine(location, fileName), image.RawData);
+
+                    model.ImaPath = fileName;
+                }
                 _db.Add(model);
 
                 await _db.SaveChangesAsync();
@@ -111,13 +132,13 @@ namespace NewsAppApi.Controllers
             }
         }
 
-        [HttpPost("ActualizarHotImagenes")]
+        [HttpPost("BorrarHotImagenes")]
         [AllowAnonymous]
-        public async Task<ActionResult> Put([FromBody] ImagenHot model)
+        public async Task<ActionResult> Delete([FromBody] ImagenHot model)
         {
             try
             {
-                _db.Update(model);
+                _db.Remove(model);
 
                 await _db.SaveChangesAsync();
                 return Ok(model);

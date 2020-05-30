@@ -6,12 +6,12 @@ using System.Threading.Tasks;
 
 namespace NewsAppApi.Entities.Data
 {
-    public class ImagenHot
+    public class Icono
     {
         [Key]
-        public int ImaId { get; set; }
-        public string ImaPath { get; set; }
-        public string ImaTitulo { get; set; }
-        public bool ImaIsLink { get; set; }
+        public int IcoId { get; set; }
+        public string IcoDescripcion { get; set; }
+        public string IcoWeb { get; set; }
+        public string IcoApp { get; set; }
     }
 }

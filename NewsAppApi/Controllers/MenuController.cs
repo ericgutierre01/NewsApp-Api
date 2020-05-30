@@ -3,16 +3,18 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using NewsAppApi.Entities;
 using NewsAppApi.Entities.Data;
 
 namespace NewsAppApi.Controllers
 {
-    [Route("[controller]")]
     [ApiController]
-    public class MenuController : Controller
+    [EnableCors("_myAllowSpecificOrigins")]
+    public class MenuController : BaseController
     {
         private readonly ApiContext _db;
         public MenuController(ApiContext context)
@@ -48,6 +50,59 @@ namespace NewsAppApi.Controllers
 
         }
 
+        [HttpGet("{id}")]
+        [AllowAnonymous]
+        public async Task<ActionResult<Menu>> GetById(int id)
+        {
+
+            try
+            {
+                var menu = _db.Menus.SingleOrDefaultAsync(x => x.menId ==id);
+
+                return Ok(menu.Result);
+            }
+            catch (Exception e)
+            {
+                return BadRequest(e.Message);
+            }
+
+        }
+
+        [HttpGet("Iconos")]
+        [AllowAnonymous]
+        public async Task<ActionResult<IEnumerable<Icono>>> GetIconos()
+        {
+
+            try
+            {
+                var listIcono = _db.Iconos;
+
+                return Ok(listIcono);
+            }
+            catch (Exception e)
+            {
+                return BadRequest(e.Message);
+            }
+
+        }
+
+        [HttpGet("Iconos{icoId}")]
+        [AllowAnonymous]
+        public async Task<ActionResult<Icono>> GetIconoById(int icoId)
+        {
+
+            try
+            {
+                var listIcono = _db.Iconos.SingleOrDefault(x=>x.IcoId == icoId);
+                return Ok(listIcono);
+            }
+            catch (Exception e)
+            {
+                return BadRequest(e.Message);
+            }
+
+        }
+
         [HttpPost]
         [AllowAnonymous]
         public async Task<ActionResult> Post([FromBody] Menu model)
@@ -68,7 +123,6 @@ namespace NewsAppApi.Controllers
         }
 
         [HttpPost("Actualizar")]
-        [AllowAnonymous]
         public async Task<ActionResult> Put([FromBody] Menu model)
         {
             try

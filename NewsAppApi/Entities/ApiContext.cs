@@ -16,5 +16,7 @@ namespace NewsAppApi.Entities
         }
         public DbSet<Menu> Menus { get; set; }
         public DbSet<ImagenHot> Imagenes { get; set; }
+        public DbSet<Icono> Iconos { get; set; }
+        public DbSet<Usuario> Usuarios { get; set; }
     }
 }
