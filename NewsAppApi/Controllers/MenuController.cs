@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using NewsAppApi.Entities;
 using NewsAppApi.Entities.Data;
+using NewsAppApi.ViewModel;
 
 namespace NewsAppApi.Controllers
 {
@@ -26,17 +27,6 @@ namespace NewsAppApi.Controllers
         [AllowAnonymous]
         public async Task<ActionResult<IEnumerable<Menu>>> Get()
         {
-            /*var listMenu = new List<Menu>
-            {
-                new Menu{Id ="1",Titulo="Hoy", Imagen="f1ea", IsHot =false },
-                new Menu{Id ="2",Titulo="COVID-19", Imagen="f06d", IsHot =true },
-                new Menu{Id ="3",Titulo="Politica", Imagen="f2b5" , IsHot =false},
-                new Menu{Id ="4",Titulo="Elecciones", Imagen="f756", IsHot =false },
-                new Menu{Id ="5",Titulo="Corona Virus", Imagen="f96c", IsHot =false },
-                new Menu{Id ="6",Titulo="Deportes", Imagen="f434", IsHot =false },
-                new Menu{Id ="6",Titulo="Farandula", Imagen="f434", IsHot =false }
-            };*/
-
             try
             {
                 var listMenu = _db.Menus.Where(x => x.menEstado == 1);
@@ -52,14 +42,25 @@ namespace NewsAppApi.Controllers
 
         [HttpGet("{id}")]
         [AllowAnonymous]
-        public async Task<ActionResult<Menu>> GetById(int id)
+        public async Task<ActionResult<MenuViewModel>> GetById(int id)
         {
-
             try
             {
-                var menu = _db.Menus.SingleOrDefaultAsync(x => x.menId ==id);
+                var menu = _db.Menus.SingleOrDefault(x => x.menId ==id);
 
-                return Ok(menu.Result);
+                if (menu == null)
+                    return BadRequest("No se encontro ningun titular");
+
+                var CurrenMenu = new MenuViewModel()
+                {
+                    menTitulo = menu.menTitulo,
+                    menEstado = menu.menEstado,
+                    menId = menu.menId,
+                    menIsHot = menu.menIsHot,
+                    Imagen = menu.Imagen,
+                };
+                CurrenMenu.ImagenesHot = _db.Imagenes.Where(i => i.ImaTitulo == menu.menTitulo).ToList();
+                return Ok(CurrenMenu);
             }
             catch (Exception e)
             {
